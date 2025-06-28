@@ -6,27 +6,45 @@
     <title>Youtube Video Downloader</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        function pollProgress() {
-            fetch('/progress')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status) {
-                        document.getElementById('progress').textContent =
-                            `${data.status} (${data.percentage})`;
-                        if (data.status !== 'Finished') {
-                            setTimeout(pollProgress, 1000);
-                        }
-                    }
+        async function downloadVideo(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('video_url');
+            const statusMsg = document.getElementById('status');
+            const videoURL = urlInput.value.trim();
+
+            if (!videoURL) {
+                statusMsg.textContent = "Please enter a valid URL.";
+                return;
+            }
+
+            statusMsg.textContent = "Downloading...";
+
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ video_url: videoURL })
                 });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusMsg.textContent = result.message;
+                } else {
+                    statusMsg.textContent = "Error: " + result.message;
+                }
+            } catch (err) {
+                statusMsg.textContent = "An error occurred while downloading.";
+                console.error(err);
+            }
         }
-        function onFormSubmit() {
-            setTimeout(pollProgress, 500);  // Start polling after submission
-        }
-    </script> 
+    </script>
 </head>
-    <body class = "flex flex-col gap-32 justify-center bg-gray-950 h-screen">
+    <body class = "flex flex-col gap-32 justify-center bg-blue-200 h-screen">
         <h1 class = "flex pt-8 justify-center text-4xl font-extrabold bg-gradient-to-br from-purple-600 to-blue-500 bg-clip-text text-transparent">YOUTUBE VIDEO DOWNLOADER</h1>
-        <form action="/" method="post" onsubmit="onFormSubmit()" class =" mx-auto flex flex-col items-center gap-4">
+        <form action="/" method="post" onsubmit="downloadVideo(event)" class =" mx-auto flex flex-col items-center gap-4">
             <label for="video_url" class= "bg-gradient-to-br from-purple-600 to-blue-500 bg-clip-text text-transparent">Enter YouTube Video URL</label><br>
             <div class="p-[2px] rounded-lg bg-gradient-to-br from-purple-600 to-blue-500 w-[300px]">
                 <input type="text" id="video_url" name="video_url" placeholder=" Enter URL" class="w-full rounded-lg bg-black text-white p-2 focus:outline-none" required>
@@ -36,16 +54,9 @@
             <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
             Download
             </span>
+            </button>
         </form>
 
-    <p id="progress"></p>
-
-    {% if status %}
-        <p><strong>{{ status }}</strong></p>
-    {% endif %}
-
-    {% if error %}
-    <p>Error: {{ error }}</p>
-    {% endif %}
+    <p id="status" class="text-lg font-semibold"></p>
     </body>
 </html>

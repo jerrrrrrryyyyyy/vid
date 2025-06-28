@@ -28,6 +28,7 @@ def download_video():
         except Exception as e:
             print(f"Error downloading video: {e}")
             return render_template('vid.html', error=str(e))
+        return redirect(url_for('download_video'))
 
     return render_template('vid.html',status=status)
 
